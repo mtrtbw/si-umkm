@@ -1,7 +1,9 @@
 import { GetStaticProps } from 'next';
 import Link from 'next/link';
+import dbConnect from '@/lib/db';
+import Product from '@/models/Product';
 
-type Product = {
+type ProductType = {
   _id: string;
   name: string;
   description: string;
@@ -9,7 +11,7 @@ type Product = {
 };
 
 type Props = {
-  products: Product[];
+  products: ProductType[];
 };
 
 export default function ProdukPage({ products }: Props) {
@@ -30,9 +32,8 @@ export default function ProdukPage({ products }: Props) {
           {products.map((product) => (
             <li key={product._id} style={{ marginBottom: '1rem' }}>
               <Link href={`/produk/${product._id}`}>
-  <strong>{product.name}</strong> - Rp{product.price}
-</Link>
-
+                <strong>{product.name}</strong> - Rp{product.price}
+              </Link>
             </li>
           ))}
         </ul>
@@ -42,18 +43,14 @@ export default function ProdukPage({ products }: Props) {
 }
 
 export const getStaticProps: GetStaticProps = async () => {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-  const res = await fetch(`${baseUrl}/api/products`);
+  await dbConnect(); // koneksi ke MongoDB Atlas
 
-  if (!res.ok) {
-    console.error("Failed to fetch /api/products:", res.status);
-    return { props: { products: [] } };
-  }
-
-  const products = await res.json();
+  const products = await Product.find().lean(); // ambil data langsung
 
   return {
-    props: { products },
-    revalidate: 10,
+    props: {
+      products: JSON.parse(JSON.stringify(products)), // serialisasi data
+    },
+    revalidate: 10, // ISR: regenerasi setiap 10 detik
   };
 };
