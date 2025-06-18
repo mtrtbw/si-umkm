@@ -44,10 +44,16 @@ export default function ProdukPage({ products }: Props) {
 export const getStaticProps: GetStaticProps = async () => {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
   const res = await fetch(`${baseUrl}/api/products`);
+
+  if (!res.ok) {
+    console.error("Failed to fetch /api/products:", res.status);
+    return { props: { products: [] } };
+  }
+
   const products = await res.json();
 
   return {
     props: { products },
-    revalidate: 10, // ISR: regenerate every 10 seconds
+    revalidate: 10,
   };
 };
