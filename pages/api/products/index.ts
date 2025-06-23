@@ -1,49 +1,37 @@
+// File: pages/api/products/index.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import dbConnect from '@/lib/db';
 import Product from '@/models/Product';
-import validator from 'validator';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  await dbConnect(); // ⬅️ WAJIB agar terkoneksi ke MongoDB
+  await dbConnect();
 
   if (req.method === 'GET') {
-    try {
-      const products = await Product.find();
-      return res.status(200).json(products);
-    } catch (err) {
-      return res.status(500).json({ error: 'Gagal mengambil produk' });
-    }
+    const products = await Product.find();
+    return res.status(200).json(products);
   }
 
   if (req.method === 'POST') {
-    const { name, description, price } = req.body;
-
-    // Validasi nama tidak boleh kosong dan hanya huruf/angka/spasi
-    if (!name || !validator.isAlphanumeric(name.replace(/\s/g, ''))) {
-      return res.status(400).json({ error: 'Nama hanya boleh huruf, angka dan spasi' });
-    }
-
-    // Validasi harga
-    if (!price || isNaN(price)) {
-      return res.status(400).json({ error: 'Harga tidak valid' });
-    }
-
-    // Sanitasi deskripsi agar aman dari XSS
-    const cleanDescription = validator.escape(description || '');
-
     try {
-      const product = await Product.create({
+      const { name, description, price, image } = req.body;
+
+      // ✅ image harus ikut disimpan di sini
+      const newProduct = new Product({
         name,
-        description: cleanDescription,
+        description,
         price,
+        image, // ✅ Pastikan ini ada
       });
 
-      return res.status(201).json(product);
+      await newProduct.save();
+
+      return res.status(201).json(newProduct);
     } catch (error) {
+      console.error(error);
       return res.status(500).json({ error: 'Gagal menyimpan produk' });
     }
   }
 
-  // Jika method bukan GET atau POST
-  return res.status(405).json({ error: 'Method not allowed' });
+  res.setHeader('Allow', ['GET', 'POST']);
+  res.status(405).end(`Method ${req.method} Not Allowed`);
 }

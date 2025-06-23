@@ -1,9 +1,19 @@
-import mongoose from 'mongoose';
+// === models/Product.ts ===
+import { Schema, model, models } from 'mongoose';
 
-const ProductSchema = new mongoose.Schema({
-  name: String,
+const ProductSchema = new Schema({
+  name: { type: String, required: true },
   description: String,
-  price: Number,
+  price: { type: Number, required: true },
+  image: { type: String },
+  ratings: {
+    type: [
+      {
+        score: { type: Number, required: true },
+      },
+    ],
+    default: [],
+  },
 });
 
-export default mongoose.models.Product || mongoose.model('Product', ProductSchema);
+export default models.Product || model('Product', ProductSchema);
