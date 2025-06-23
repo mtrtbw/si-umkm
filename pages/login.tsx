@@ -92,7 +92,7 @@ export default function LoginPage() {
             <span className="px-2 text-gray-400 text-sm">atau</span>
             <div className="flex-grow border-t border-gray-300" />
           </div>
-
+          {/* === Right Side: Login google === */}
           <button
             onClick={loginWithGoogle}
             className="w-full border border-gray-300 py-2 rounded-md text-gray-700 hover:bg-blue-100 transition flex items-center justify-center gap-2"
