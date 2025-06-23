@@ -1,6 +1,7 @@
-// File: pages/produk/index.tsx
 import { GetServerSideProps } from 'next';
 import Link from 'next/link';
+import { useState } from 'react';
+import { useRouter } from 'next/router';
 import dbConnect from '@/lib/db';
 import Product from '@/models/Product';
 
@@ -14,24 +15,71 @@ type ProductType = {
 
 type Props = {
   products: ProductType[];
+  search?: string;
 };
 
-export default function ProdukPage({ products }: Props) {
-  return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4 sm:px-8">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-4xl font-bold text-center text-blue-700 mb-10">
-          Daftar Produk UMKM
-        </h1>
+export default function ProdukPage({ products, search = '' }: Props) {
+  const [query, setQuery] = useState(search);
+  const router = useRouter();
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (query.trim()) {
+      router.push(`/produk?search=${encodeURIComponent(query.trim())}`);
+    }
+  };
+
+  return (
+    <div
+      className="min-h-screen bg-cover bg-center text-white"
+      style={{
+        backgroundImage:
+          "linear-gradient(to bottom, rgba(0,0,0,0.8), rgba(0,0,0,0.95)), url('/umkm-banner.avif')",
+      }}
+    >
+      {/* Header */}
+      <div className="w-full px-6 py-4 flex justify-center bg-black bg-opacity-50 shadow-md">
+        <div className="w-full max-w-6xl flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-yellow-400">
+            {search ? `Hasil: "${search}"` : 'Produk UMKM'}
+          </h1>
+          <Link href="/">
+            <button className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-4 py-2 rounded-xl transition">
+              🔙 Kembali
+            </button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Form Pencarian */}
+      <div className="flex justify-center mt-6 px-4">
+        <form onSubmit={handleSearch} className="flex w-full max-w-2xl">
+          <input
+            type="text"
+            placeholder="Cari produk UMKM..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="flex-grow px-5 py-3 rounded-l-md text-black bg-white focus:outline-none"
+          />
+          <button
+            type="submit"
+            className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-6 py-3 rounded-r-md transition"
+          >
+            Cari
+          </button>
+        </form>
+      </div>
+
+      {/* Produk */}
+      <div className="flex-grow py-10 px-4 sm:px-8 max-w-6xl mx-auto">
         {products.length === 0 ? (
-          <p className="text-center text-gray-500">Belum ada produk tersedia.</p>
+          <p className="text-center text-gray-300 text-xl mt-12">Tidak ditemukan produk yang sesuai.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
             {products.map((product) => (
               <div
                 key={product._id}
-                className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition"
+                className="bg-white text-black rounded-xl shadow-lg p-6 hover:shadow-2xl transition"
               >
                 {product.image && (
                   <img
@@ -40,19 +88,15 @@ export default function ProdukPage({ products }: Props) {
                     className="w-full h-48 object-cover rounded mb-4"
                   />
                 )}
-
                 <h3 className="text-xl font-bold text-gray-800 text-center mb-2">
                   {product.name}
                 </h3>
-
-                <p className="text-sm text-gray-600 text-center mb-4">
+                <p className="text-sm text-gray-600 text-center mb-3">
                   {product.description}
                 </p>
-
                 <p className="text-lg font-semibold text-blue-600 text-center mb-4">
                   Rp{product.price.toLocaleString('id-ID')}
                 </p>
-
                 <Link
                   href={`/produk/${product._id}`}
                   className="text-center block bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-semibold transition"
@@ -68,13 +112,24 @@ export default function ProdukPage({ products }: Props) {
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async () => {
+export const getServerSideProps: GetServerSideProps = async (context) => {
   await dbConnect();
-  const products = await Product.find().lean();
+
+  const search = (context.query.search || '').toString().trim();
+
+  let query = {};
+  if (search) {
+    query = {
+      name: { $regex: search, $options: 'i' }, // pencarian nama produk
+    };
+  }
+
+  const products = await Product.find(query).lean();
 
   return {
     props: {
       products: JSON.parse(JSON.stringify(products)),
+      search,
     },
   };
 };
