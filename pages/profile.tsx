@@ -64,7 +64,7 @@ export default function AdminPanel() {
             Admin Panel – Kelola Produk UMKM
           </h1>
 
-          {/* Form Tambah Produk dan gambar*/}
+          {/* Form Tambah Produk*/}
           <form
             onSubmit={(e) => {
               e.preventDefault();
