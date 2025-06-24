@@ -30,10 +30,11 @@ export default function PelatihanPage() {
         },
         {
           id: "2",
-          nama: "Manajemen Keuangan untuk UMKM",
-          penyelenggara: "Dinas Koperasi Provinsi Jawa Tengah",
-          tanggal: "2025-08-05",
+          nama: "Pelatihan Digital Marketing untuk UMKM Regenerasi Petani Jawa Barat ",
+          penyelenggara: "P3W Provinsi Jawa Barat",
+          tanggal: "2025-06-05",
           lokasi: "Semarang",
+          linkPendaftaran: "https://p3wdiskuk.jabarprov.go.id/pelatihan-digital-marketing-untuk-umkm-regenerasi-petani-jawa-barat-resmi-dibuka/",
         },
       ];
       setPelatihan(data);
