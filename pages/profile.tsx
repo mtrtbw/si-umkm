@@ -11,6 +11,7 @@ type Product = {
   price: number;
   image?: string;
   ratings?: { score: number }[];
+  
 };
 
 export default function AdminPanel() {
@@ -81,6 +82,7 @@ export default function AdminPanel() {
           description,
           price: parseFloat(price),
           image,
+          postedBy: userEmail,
         });
       } else {
         await axios.post("/api/products", {
@@ -88,6 +90,7 @@ export default function AdminPanel() {
           description,
           price: parseFloat(price),
           image,
+          postedBy: userEmail,
         });
       }
 

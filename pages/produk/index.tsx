@@ -1,9 +1,9 @@
-import { GetServerSideProps } from 'next';
-import Link from 'next/link';
-import { useState } from 'react';
-import { useRouter } from 'next/router';
-import dbConnect from '@/lib/db';
-import Product from '@/models/Product';
+import { GetServerSideProps } from "next";
+import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/router";
+import dbConnect from "@/lib/db";
+import Product from "@/models/Product";
 
 type ProductType = {
   _id: string;
@@ -12,6 +12,7 @@ type ProductType = {
   price: number;
   image?: string;
   ratings?: { score: number }[];
+  postedBy?: string;
 };
 
 type Props = {
@@ -19,7 +20,7 @@ type Props = {
   search?: string;
 };
 
-export default function ProdukPage({ products, search = '' }: Props) {
+export default function ProdukPage({ products, search = "" }: Props) {
   const [query, setQuery] = useState(search);
   const router = useRouter();
 
@@ -42,7 +43,7 @@ export default function ProdukPage({ products, search = '' }: Props) {
       <div className="w-full px-6 py-4 flex justify-center bg-black bg-opacity-50 shadow-md">
         <div className="w-full max-w-6xl flex justify-between items-center">
           <h1 className="text-3xl font-bold text-yellow-400">
-            {search ? `Hasil: "${search}"` : 'Produk UMKM'}
+            {search ? `Hasil: "${search}"` : "Produk UMKM"}
           </h1>
           <Link href="/">
             <button className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-4 py-2 rounded-xl transition">
@@ -74,13 +75,16 @@ export default function ProdukPage({ products, search = '' }: Props) {
       {/* Produk */}
       <div className="flex-grow py-10 px-4 sm:px-8 max-w-6xl mx-auto">
         {products.length === 0 ? (
-          <p className="text-center text-gray-300 text-xl mt-12">Tidak ditemukan produk yang sesuai.</p>
+          <p className="text-center text-gray-300 text-xl mt-12">
+            Tidak ditemukan produk yang sesuai.
+          </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
             {products.map((product) => {
               const averageRating = product.ratings?.length
                 ? (
-                    product.ratings.reduce((acc, r) => acc + r.score, 0) / product.ratings.length
+                    product.ratings.reduce((acc, r) => acc + r.score, 0) /
+                    product.ratings.length
                   ).toFixed(1)
                 : null;
 
@@ -103,11 +107,17 @@ export default function ProdukPage({ products, search = '' }: Props) {
                     {product.description}
                   </p>
                   <p className="text-lg font-semibold text-yellow-700 text-center mb-1">
-                    Rp{product.price.toLocaleString('id-ID')}
+                    Rp{product.price.toLocaleString("id-ID")}
                   </p>
                   <p className="text-sm text-yellow-500 text-center mb-3">
-                    {averageRating ? `⭐ ${averageRating} / 5` : 'Belum ada rating'}
+                    {averageRating
+                      ? `⭐ ${averageRating} / 5`
+                      : "Belum ada rating"}
                   </p>
+                  <p className="text-sm text-gray-500 text-center mb-1">
+  Diposting oleh: {product.postedBy ? product.postedBy.split("@")[0] : "Admin@admin.com"}
+</p>
+
                   <Link
                     href={`/produk/${product._id}`}
                     className="text-center block bg-yellow-400 hover:bg-yellow-500 text-white py-2 rounded-md font-semibold transition"
@@ -126,18 +136,18 @@ export default function ProdukPage({ products, search = '' }: Props) {
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   await dbConnect();
-
-  const search = (context.query.search || '').toString().trim();
+  
+  const search = (context.query.search || "").toString().trim();
 
   let query = {};
   if (search) {
     query = {
-      name: { $regex: search, $options: 'i' },
+      name: { $regex: search, $options: "i" },
     };
   }
 
   const products = await Product.find(query)
-    .select('name description price image ratings') // ambil ratings
+    .select("name description price image ratings") // ambil ratings
     .lean();
 
   return {

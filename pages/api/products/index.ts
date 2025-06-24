@@ -1,37 +1,25 @@
-// File: pages/api/products/index.ts
-import type { NextApiRequest, NextApiResponse } from 'next';
-import dbConnect from '@/lib/db';
-import Product from '@/models/Product';
+import dbConnect from "@/lib/db";
+import Product from "@/models/Product";
+import type { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await dbConnect();
 
-  if (req.method === 'GET') {
-    const products = await Product.find();
+  if (req.method === "GET") {
+    const products = await Product.find({});
     return res.status(200).json(products);
   }
 
-  if (req.method === 'POST') {
+  if (req.method === "POST") {
+    const { name, description, price, image, postedBy } = req.body;
     try {
-      const { name, description, price, image } = req.body;
-
-      // ✅ image harus ikut disimpan di sini
-      const newProduct = new Product({
-        name,
-        description,
-        price,
-        image, // ✅ Pastikan ini ada
-      });
-
-      await newProduct.save();
-
+      const newProduct = await Product.create({ name, description, price, image, postedBy });
       return res.status(201).json(newProduct);
     } catch (error) {
-      console.error(error);
-      return res.status(500).json({ error: 'Gagal menyimpan produk' });
+      return res.status(400).json({ error: "Gagal menambahkan produk." });
     }
   }
 
-  res.setHeader('Allow', ['GET', 'POST']);
+  res.setHeader("Allow", ["GET", "POST"]);
   res.status(405).end(`Method ${req.method} Not Allowed`);
 }

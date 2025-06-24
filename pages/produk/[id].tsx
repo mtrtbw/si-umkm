@@ -1,10 +1,10 @@
 // File: pages/produk/[id].tsx
-import { GetServerSideProps } from 'next';
-import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
-import dbConnect from '@/lib/db';
-import ProductModel from '@/models/Product';
-import { auth } from '@/lib/firebase';
+import { GetServerSideProps } from "next";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import dbConnect from "@/lib/db";
+import ProductModel from "@/models/Product";
+import { auth } from "@/lib/firebase";
 
 interface Review {
   user: string;
@@ -19,6 +19,7 @@ type Product = {
   image?: string;
   ratings?: { score: number }[];
   reviews?: Review[];
+  postedBy?: string;
 };
 
 type Props = {
@@ -29,10 +30,10 @@ export default function DetailProduk({ product }: Props) {
   const router = useRouter();
   const [showError, setShowError] = useState(false);
   const [rating, setRating] = useState(0);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [average, setAverage] = useState<string | null>(null);
-  const [reviewText, setReviewText] = useState('');
-  const [userEmail, setUserEmail] = useState<string>('');
+  const [reviewText, setReviewText] = useState("");
+  const [userEmail, setUserEmail] = useState<string>("");
 
   useEffect(() => {
     if (!product) setShowError(true);
@@ -53,29 +54,29 @@ export default function DetailProduk({ product }: Props) {
   const handleRating = async () => {
     if (!rating) return;
     const res = await fetch(`/api/products/${product?._id}/rate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ score: rating }),
     });
 
     if (res.ok) {
-      setMessage('Terima kasih atas rating Anda!');
+      setMessage("Terima kasih atas rating Anda!");
       setTimeout(() => router.reload(), 1000);
     } else {
-      setMessage('Gagal menyimpan rating.');
+      setMessage("Gagal menyimpan rating.");
     }
   };
 
   const handleReview = async () => {
     if (!reviewText.trim()) return;
     const res = await fetch(`/api/products/${product?._id}/review`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: reviewText, user: userEmail }),
     });
 
     if (res.ok) {
-      setReviewText('');
+      setReviewText("");
       setTimeout(() => router.reload(), 500);
     }
   };
@@ -86,7 +87,7 @@ export default function DetailProduk({ product }: Props) {
         <div>
           <h1 className="text-2xl font-bold mb-4">Produk tidak ditemukan</h1>
           <button
-            onClick={() => router.push('/produk')}
+            onClick={() => router.push("/produk")}
             className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded"
           >
             Kembali ke Daftar Produk
@@ -115,15 +116,20 @@ export default function DetailProduk({ product }: Props) {
         <h1 className="text-3xl font-bold text-black mb-2">{product?.name}</h1>
         <p className="text-black mb-4">{product?.description}</p>
         <p className="text-xl text-black font-semibold mb-2">
-          Harga: Rp{product?.price.toLocaleString('id-ID')}
+          Harga: Rp{product?.price.toLocaleString("id-ID")}
         </p>
         <p className="text-yellow-400 font-medium mb-4">
-          ⭐ {average || 'Belum ada rating'} / 5
+          ⭐ {average || "Belum ada rating"} / 5
+        </p>
+        <p className="text-sm text-gray-600 italic mb-2">
+          Diposting oleh: {product?.postedBy || "Admin"}
         </p>
 
         {/* Form Rating */}
         <div className="mb-6">
-          <label className="block font-medium mb-1 text-white">Beri Rating:</label>
+          <label className="block font-medium mb-1 text-white">
+            Beri Rating:
+          </label>
           <div className="flex items-center gap-3">
             <select
               value={rating}
@@ -144,13 +150,17 @@ export default function DetailProduk({ product }: Props) {
               Kirim
             </button>
           </div>
-          {message && <p className="text-green-600 font-medium mt-2">{message}</p>}
+          {message && (
+            <p className="text-green-600 font-medium mt-2">{message}</p>
+          )}
         </div>
 
         {/* Form Review */}
         {userEmail && (
           <div className="mb-6">
-            <label className="block font-medium text-black mb-1">Tulis Ulasan:</label>
+            <label className="block font-medium text-black mb-1">
+              Tulis Ulasan:
+            </label>
             <textarea
               value={reviewText}
               onChange={(e) => setReviewText(e.target.value)}
@@ -169,7 +179,9 @@ export default function DetailProduk({ product }: Props) {
         {/* Daftar Ulasan */}
         {product?.reviews && product.reviews.length > 0 && (
           <div className="mt-6">
-            <h3 className="text-lg font-bold text-black mb-2">Ulasan Pengguna:</h3>
+            <h3 className="text-lg font-bold text-black mb-2">
+              Ulasan Pengguna:
+            </h3>
             <div className="space-y-3">
               {product.reviews.map((r, idx) => (
                 <div key={idx} className="bg-gray-100 p-3 rounded-md">
@@ -184,7 +196,7 @@ export default function DetailProduk({ product }: Props) {
         {/* Tombol Navigasi */}
         <div className="flex justify-between mt-8">
           <button
-            onClick={() => router.push('/produk')}
+            onClick={() => router.push("/produk")}
             className="bg-gray-200 hover:bg-gray-300 text-black px-4 py-2 rounded-md"
           >
             ← Kembali
@@ -201,7 +213,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   try {
     const product = await ProductModel.findById(id)
-      .select('name description price image ratings reviews')
+      .select("name description price image ratings reviews")
       .lean();
 
     if (!product) return { props: { product: null } };
@@ -210,7 +222,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       props: { product: JSON.parse(JSON.stringify(product)) },
     };
   } catch (err) {
-    console.error('Error ambil produk:', err);
+    console.error("Error ambil produk:", err);
     return { props: { product: null } };
   }
 };
