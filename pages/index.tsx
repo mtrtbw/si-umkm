@@ -9,15 +9,13 @@ import { FaUserCircle } from "react-icons/fa";
 export default function HomePage() {
   const [query, setQuery] = useState("");
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setUserEmail(user?.email ?? null);
-      setIsLoading(false);
     });
     return () => unsubscribe();
   }, []);
@@ -32,9 +30,11 @@ export default function HomePage() {
   const handleLogout = async () => {
     await auth.signOut();
     setUserEmail(null);
-    setDropdownOpen(false);
+    setShowUserMenu(false);
     router.push("/");
   };
+
+  const getInitial = (email: string) => email.charAt(0).toUpperCase();
 
   return (
     <div
@@ -48,7 +48,13 @@ export default function HomePage() {
       <div className="w-full px-6 py-4 flex items-center justify-between bg-black bg-opacity-50 shadow-md">
         {/* Logo */}
         <div className="flex items-center gap-3">
-          <Image src="/logo.png" alt="Logo Si-UMKM" width={48} height={48} className="object-contain" />
+          <Image
+            src="/logo.png"
+            alt="Logo Si-UMKM"
+            width={48}
+            height={48}
+            className="object-contain"
+          />
           <span className="text-xl font-semibold hidden sm:block">Si-UMKM</span>
         </div>
 
@@ -59,9 +65,13 @@ export default function HomePage() {
               Produk
             </button>
           </Link>
+          <Link href="/pelatihan">
+            <button className="border border-yellow-400 hover:bg-yellow-400 hover:text-black text-white font-semibold px-4 py-2 rounded-xl transition">
+              Pelatihan
+            </button>
+          </Link>
 
-          {/* Hanya tampilkan Login User jika belum login */}
-          {!isLoading && !userEmail && (
+          {!userEmail && (
             <Link href="/login-user">
               <button className="border border-yellow-400 hover:bg-yellow-400 hover:text-black text-white font-semibold px-4 py-2 rounded-xl transition">
                 Login User
@@ -69,29 +79,21 @@ export default function HomePage() {
             </Link>
           )}
 
-          {/* Login Admin selalu tersedia */}
-          <Link href="/login">
-            <button className="border border-yellow-400 hover:bg-yellow-400 hover:text-black text-white font-semibold px-4 py-2 rounded-xl transition">
-              Login Admin
-            </button>
-          </Link>
-
-          {/* Ikon user dan dropdown */}
-          {!isLoading && userEmail && (
+          {userEmail && (
             <div className="relative">
               <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-2 text-yellow-300 font-medium"
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-2 text-yellow-300 font-medium border border-yellow-400 px-3 py-1.5 rounded-xl hover:bg-yellow-400 hover:text-black"
               >
-                <FaUserCircle className="text-xl" />
+                <FaUserCircle className="text-lg" />
+                <span>{getInitial(userEmail)}</span>
               </button>
-
-              {dropdownOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white text-black rounded shadow-lg z-50">
-                  <div className="px-4 py-2 border-b text-sm font-medium">{userEmail}</div>
+              {showUserMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded shadow-lg text-black z-50">
+                  <div className="px-4 py-2 border-b font-semibold text-sm">{userEmail}</div>
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100"
+                    className="w-full text-red-600 text-left px-4 py-2 hover:bg-red-100 text-sm"
                   >
                     Logout
                   </button>
@@ -99,11 +101,20 @@ export default function HomePage() {
               )}
             </div>
           )}
+
+          <Link href="/login">
+            <button className="border border-yellow-400 hover:bg-yellow-400 hover:text-black text-white font-semibold px-4 py-2 rounded-xl transition">
+              Login Admin
+            </button>
+          </Link>
         </div>
 
         {/* Mobile Hamburger */}
         <div className="sm:hidden">
-          <button onClick={() => setSidebarOpen(true)} className="text-yellow-400 text-2xl">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="text-yellow-400 text-2xl"
+          >
             <FiMenu />
           </button>
         </div>
@@ -116,47 +127,56 @@ export default function HomePage() {
         } sm:hidden`}
       >
         {/* Overlay */}
-        <div className="absolute inset-0 bg-black bg-opacity-60" onClick={() => setSidebarOpen(false)}></div>
+        <div
+          className="absolute inset-0 bg-black bg-opacity-60"
+          onClick={() => setSidebarOpen(false)}
+        ></div>
 
         {/* Sidebar */}
         <div className="absolute top-0 right-0 w-64 h-full bg-black text-white shadow-lg p-6 flex flex-col">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold text-yellow-400">Menu</h2>
-            <button onClick={() => setSidebarOpen(false)} className="text-2xl text-yellow-400">
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="text-2xl text-yellow-400"
+            >
               <FiX />
             </button>
           </div>
 
           <Link href="/produk" onClick={() => setSidebarOpen(false)}>
-            <button className="text-left text-white w-full px-4 py-2 rounded hover:bg-yellow-400 hover:text-black">
+            <button className="text-left text-white w-full px-4 py-2 rounded hover:bg-yellow-500 hover:text-black">
               Produk
             </button>
           </Link>
-
-          {!isLoading && !userEmail && (
+          <Link href="/pelatihan" onClick={() => setSidebarOpen(false)}>
+            <button className="text-left text-white w-full px-4 py-2 rounded hover:bg-yellow-500 hover:text-black">
+              Pelatihan
+            </button>
+          </Link>
+          {!userEmail && (
             <Link href="/login-user" onClick={() => setSidebarOpen(false)}>
-              <button className="text-left text-white w-full px-4 py-2 rounded hover:bg-yellow-400 hover:text-black">
+              <button className="text-left text-white w-full px-4 py-2 rounded hover:bg-yellow-500 hover:text-black">
                 Login User
               </button>
             </Link>
           )}
-
           <Link href="/login" onClick={() => setSidebarOpen(false)}>
-            <button className="text-left text-white w-full px-4 py-2 rounded hover:bg-yellow-400 hover:text-black">
+            <button className="text-left text-white w-full px-4 py-2 rounded hover:bg-yellow-500 hover:text-black">
               Login Admin
             </button>
           </Link>
 
-          {/* Jika user login tampilkan email dan logout */}
-          {!isLoading && userEmail && (
-            <div className="mt-4 border-t border-gray-700 pt-4">
-              <div className="flex items-center gap-2 text-white text-sm mb-2">
-                <FaUserCircle className="text-lg text-yellow-400" />
-                {userEmail}
+          {userEmail && (
+            <div className="mt-4 border-t pt-4">
+              <div className="flex items-center gap-2 text-yellow-300 mb-2">
+                <FaUserCircle className="text-lg" />
+                <span>{getInitial(userEmail)}</span>
               </div>
+              <div className="text-sm text-white mb-2">{userEmail}</div>
               <button
                 onClick={handleLogout}
-                className="text-left text-red-500 w-full px-4 py-2 rounded hover:bg-red-100"
+                className="w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-yellow-500"
               >
                 Logout
               </button>

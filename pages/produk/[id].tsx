@@ -1,8 +1,15 @@
+// File: pages/produk/[id].tsx
 import { GetServerSideProps } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import dbConnect from '@/lib/db';
 import ProductModel from '@/models/Product';
+import { auth } from '@/lib/firebase';
+
+interface Review {
+  user: string;
+  text: string;
+}
 
 type Product = {
   _id: string;
@@ -11,6 +18,7 @@ type Product = {
   price: number;
   image?: string;
   ratings?: { score: number }[];
+  reviews?: Review[];
 };
 
 type Props = {
@@ -23,6 +31,8 @@ export default function DetailProduk({ product }: Props) {
   const [rating, setRating] = useState(0);
   const [message, setMessage] = useState('');
   const [average, setAverage] = useState<string | null>(null);
+  const [reviewText, setReviewText] = useState('');
+  const [userEmail, setUserEmail] = useState<string>('');
 
   useEffect(() => {
     if (!product) setShowError(true);
@@ -32,6 +42,12 @@ export default function DetailProduk({ product }: Props) {
         product.ratings.length;
       setAverage(avg.toFixed(1));
     }
+
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user?.email) setUserEmail(user.email);
+    });
+
+    return () => unsubscribe();
   }, [product]);
 
   const handleRating = async () => {
@@ -47,6 +63,20 @@ export default function DetailProduk({ product }: Props) {
       setTimeout(() => router.reload(), 1000);
     } else {
       setMessage('Gagal menyimpan rating.');
+    }
+  };
+
+  const handleReview = async () => {
+    if (!reviewText.trim()) return;
+    const res = await fetch(`/api/products/${product?._id}/review`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: reviewText, user: userEmail }),
+    });
+
+    if (res.ok) {
+      setReviewText('');
+      setTimeout(() => router.reload(), 500);
     }
   };
 
@@ -114,11 +144,45 @@ export default function DetailProduk({ product }: Props) {
               Kirim
             </button>
           </div>
-          {message && <p className="text-green-300 font-medium mt-2">{message}</p>}
+          {message && <p className="text-green-600 font-medium mt-2">{message}</p>}
         </div>
 
+        {/* Form Review */}
+        {userEmail && (
+          <div className="mb-6">
+            <label className="block font-medium text-black mb-1">Tulis Ulasan:</label>
+            <textarea
+              value={reviewText}
+              onChange={(e) => setReviewText(e.target.value)}
+              className="w-full border px-3 py-2 rounded text-white"
+              placeholder="Tulis komentar Anda di sini"
+            />
+            <button
+              onClick={handleReview}
+              className="mt-2 bg-yellow-400 text-black px-4 py-1 rounded hover:bg-yellow-500"
+            >
+              Kirim Ulasan
+            </button>
+          </div>
+        )}
+
+        {/* Daftar Ulasan */}
+        {product?.reviews && product.reviews.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-lg font-bold text-black mb-2">Ulasan Pengguna:</h3>
+            <div className="space-y-3">
+              {product.reviews.map((r, idx) => (
+                <div key={idx} className="bg-gray-100 p-3 rounded-md">
+                  <p className="text-sm text-gray-800">{r.text}</p>
+                  <p className="text-xs text-gray-500 mt-1">oleh {r.user}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Tombol Navigasi */}
-        <div className="flex justify-between">
+        <div className="flex justify-between mt-8">
           <button
             onClick={() => router.push('/produk')}
             className="bg-gray-200 hover:bg-gray-300 text-black px-4 py-2 rounded-md"
@@ -137,7 +201,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   try {
     const product = await ProductModel.findById(id)
-      .select('name description price image ratings')
+      .select('name description price image ratings reviews')
       .lean();
 
     if (!product) return { props: { product: null } };

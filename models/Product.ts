@@ -1,4 +1,4 @@
-// === models/Product.ts ===
+// models/Product.ts
 import { Schema, model, models } from 'mongoose';
 
 const ProductSchema = new Schema({
@@ -10,6 +10,16 @@ const ProductSchema = new Schema({
     type: [
       {
         score: { type: Number, required: true },
+      },
+    ],
+    default: [],
+  },
+  reviews: {
+    type: [
+      {
+        user: { type: String, required: true },
+        text: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now },
       },
     ],
     default: [],
