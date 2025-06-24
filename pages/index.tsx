@@ -1,39 +1,25 @@
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { auth } from "@/lib/firebase";
+import { FiMenu, FiX } from "react-icons/fi";
+import { FaUserCircle } from "react-icons/fa";
 
 export default function HomePage() {
   const [query, setQuery] = useState("");
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const router = useRouter();
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
-        setUserEmail(user.email);
-      } else {
-        setUserEmail(null);
-      }
+      setUserEmail(user?.email ?? null);
+      setIsLoading(false);
     });
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setShowDropdown(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      unsubscribe();
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => unsubscribe();
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -45,8 +31,9 @@ export default function HomePage() {
 
   const handleLogout = async () => {
     await auth.signOut();
-    setShowDropdown(false);
-    router.reload(); // atau arahkan ke halaman login
+    setUserEmail(null);
+    setDropdownOpen(false);
+    router.push("/");
   };
 
   return (
@@ -58,69 +45,133 @@ export default function HomePage() {
       }}
     >
       {/* Navbar */}
-      <div className="w-full px-6 py-4 flex items-center justify-center bg-black bg-opacity-50 shadow-md">
-        <div className="w-full max-w-6xl flex items-center justify-between relative">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <Image
-              src="/logo.png"
-              alt="Logo Si-UMKM"
-              width={48}
-              height={48}
-              className="object-contain"
-            />
-          </div>
+      <div className="w-full px-6 py-4 flex items-center justify-between bg-black bg-opacity-50 shadow-md">
+        {/* Logo */}
+        <div className="flex items-center gap-3">
+          <Image src="/logo.png" alt="Logo Si-UMKM" width={48} height={48} className="object-contain" />
+          <span className="text-xl font-semibold hidden sm:block">Si-UMKM</span>
+        </div>
 
-          {/* Navigasi */}
-          <div className="flex items-center gap-4">
-            {userEmail && (
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  onClick={() => setShowDropdown(!showDropdown)}
-                  className="text-yellow-300 font-semibold hover:underline"
-                >
-                  {userEmail}
-                </button>
-                {showDropdown && (
-                  <div className="absolute right-0 mt-2 bg-white text-black rounded shadow-lg z-10 w-40">
-                    <button
-                      onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 hover:bg-yellow-100"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+        {/* Desktop Menu */}
+        <div className="hidden sm:flex items-center gap-4 relative">
+          <Link href="/produk">
+            <button className="border border-yellow-400 hover:bg-yellow-400 hover:text-black text-white font-semibold px-4 py-2 rounded-xl transition">
+              Produk
+            </button>
+          </Link>
 
-            <Link href="/produk">
-              <button className="border border-yellow-400 hover:bg-yellow-400 hover:text-black text-white font-semibold px-5 py-2 rounded-xl transition">
-                Produk
-              </button>
-            </Link>
+          {/* Hanya tampilkan Login User jika belum login */}
+          {!isLoading && !userEmail && (
             <Link href="/login-user">
-              <button className="border border-yellow-400 hover:bg-yellow-400 hover:text-black text-white font-semibold px-5 py-2 rounded-xl transition">
+              <button className="border border-yellow-400 hover:bg-yellow-400 hover:text-black text-white font-semibold px-4 py-2 rounded-xl transition">
                 Login User
               </button>
             </Link>
-            <Link href="/login">
-              <button className="border border-yellow-400 hover:bg-yellow-400 hover:text-black text-white font-semibold px-5 py-2 rounded-xl transition">
-                Admin
+          )}
+
+          {/* Login Admin selalu tersedia */}
+          <Link href="/login">
+            <button className="border border-yellow-400 hover:bg-yellow-400 hover:text-black text-white font-semibold px-4 py-2 rounded-xl transition">
+              Login Admin
+            </button>
+          </Link>
+
+          {/* Ikon user dan dropdown */}
+          {!isLoading && userEmail && (
+            <div className="relative">
+              <button
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="flex items-center gap-2 text-yellow-300 font-medium"
+              >
+                <FaUserCircle className="text-xl" />
               </button>
-            </Link>
-          </div>
+
+              {dropdownOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-white text-black rounded shadow-lg z-50">
+                  <div className="px-4 py-2 border-b text-sm font-medium">{userEmail}</div>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Mobile Hamburger */}
+        <div className="sm:hidden">
+          <button onClick={() => setSidebarOpen(true)} className="text-yellow-400 text-2xl">
+            <FiMenu />
+          </button>
         </div>
       </div>
 
-      {/* Konten utama */}
+      {/* Sidebar Mobile */}
+      <div
+        className={`fixed inset-0 z-50 transition-transform duration-300 ${
+          sidebarOpen ? "translate-x-0" : "translate-x-full"
+        } sm:hidden`}
+      >
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-black bg-opacity-60" onClick={() => setSidebarOpen(false)}></div>
+
+        {/* Sidebar */}
+        <div className="absolute top-0 right-0 w-64 h-full bg-black text-white shadow-lg p-6 flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-yellow-400">Menu</h2>
+            <button onClick={() => setSidebarOpen(false)} className="text-2xl text-yellow-400">
+              <FiX />
+            </button>
+          </div>
+
+          <Link href="/produk" onClick={() => setSidebarOpen(false)}>
+            <button className="text-left text-white w-full px-4 py-2 rounded hover:bg-yellow-400 hover:text-black">
+              Produk
+            </button>
+          </Link>
+
+          {!isLoading && !userEmail && (
+            <Link href="/login-user" onClick={() => setSidebarOpen(false)}>
+              <button className="text-left text-white w-full px-4 py-2 rounded hover:bg-yellow-400 hover:text-black">
+                Login User
+              </button>
+            </Link>
+          )}
+
+          <Link href="/login" onClick={() => setSidebarOpen(false)}>
+            <button className="text-left text-white w-full px-4 py-2 rounded hover:bg-yellow-400 hover:text-black">
+              Login Admin
+            </button>
+          </Link>
+
+          {/* Jika user login tampilkan email dan logout */}
+          {!isLoading && userEmail && (
+            <div className="mt-4 border-t border-gray-700 pt-4">
+              <div className="flex items-center gap-2 text-white text-sm mb-2">
+                <FaUserCircle className="text-lg text-yellow-400" />
+                {userEmail}
+              </div>
+              <button
+                onClick={handleLogout}
+                className="text-left text-red-500 w-full px-4 py-2 rounded hover:bg-red-100"
+              >
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Hero Section */}
       <div className="flex-grow flex flex-col justify-center items-center text-center px-4">
         <h1 className="text-4xl sm:text-5xl font-bold mb-4">
           Selamat Datang di <span className="text-yellow-400">Si-UMKM</span>
         </h1>
         <p className="text-lg sm:text-xl text-gray-300 max-w-xl mb-6">
-          Platform digital untuk mendukung dan mempromosikan produk UMKM
-          Indonesia. Mari beli dan bangga buatan lokal!
+          Platform digital untuk mendukung dan mempromosikan produk UMKM Indonesia. Mari beli dan bangga buatan lokal!
         </p>
 
         {/* Form Pencarian */}
@@ -131,7 +182,7 @@ export default function HomePage() {
               placeholder="Cari produk UMKM..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="flex-grow px-5 py-3 rounded-l-md text-white focus:outline-none w-full"
+              className="flex-grow px-5 py-3 rounded-l-md text-white bg-black/30 placeholder-gray-300 focus:outline-none"
             />
             <button
               type="submit"
