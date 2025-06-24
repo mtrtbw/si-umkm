@@ -50,6 +50,13 @@ export default function AdminPanel() {
     }
   };
 
+  const handleResetReviews = async (id: string) => {
+    if (confirm("Yakin ingin mereset semua ulasan produk ini?")) {
+      await axios.put(`/api/products/${id}`, { reviews: [] });
+      fetchProducts();
+    }
+  };
+
   const handleEdit = (product: Product) => {
     setName(product.name);
     setDescription(product.description);
@@ -231,24 +238,32 @@ export default function AdminPanel() {
                       <p className="text-sm text-yellow-500 mt-1">
                         Rating: {avgRating ? `${avgRating} / 5` : "Belum ada rating"}
                       </p>
-                      <div className="flex justify-between items-center gap-2 mt-3">
+                      <div className="grid grid-cols-1 gap-2 mt-3">
+                        <div className="flex justify-between gap-2">
+                          <button
+                            onClick={() => handleEdit(p)}
+                            className="bg-yellow-400 hover:bg-yellow-500 text-black px-3 py-1.5 rounded-md text-sm"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleResetRating(p._id)}
+                            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm"
+                          >
+                            Reset Rating
+                          </button>
+                          <button
+                            onClick={() => handleDelete(p._id)}
+                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md text-sm"
+                          >
+                            Hapus
+                          </button>
+                        </div>
                         <button
-                          onClick={() => handleEdit(p)}
-                          className="bg-yellow-400 hover:bg-yellow-500 text-black px-3 py-1.5 rounded-md text-sm"
+                          onClick={() => handleResetReviews(p._id)}
+                          className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-md text-sm"
                         >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleResetRating(p._id)}
-                          className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm"
-                        >
-                          Reset Rating
-                        </button>
-                        <button
-                          onClick={() => handleDelete(p._id)}
-                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md text-sm"
-                        >
-                          Hapus
+                          Reset Ulasan
                         </button>
                       </div>
                     </div>
