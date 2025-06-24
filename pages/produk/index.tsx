@@ -11,6 +11,7 @@ type ProductType = {
   description: string;
   price: number;
   image?: string;
+  ratings?: { score: number }[];
 };
 
 type Props = {
@@ -45,7 +46,7 @@ export default function ProdukPage({ products, search = '' }: Props) {
           </h1>
           <Link href="/">
             <button className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-4 py-2 rounded-xl transition">
-              🔙 Kembali
+              ← Kembali
             </button>
           </Link>
         </div>
@@ -76,35 +77,46 @@ export default function ProdukPage({ products, search = '' }: Props) {
           <p className="text-center text-gray-300 text-xl mt-12">Tidak ditemukan produk yang sesuai.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-            {products.map((product) => (
-              <div
-                key={product._id}
-                className="bg-white text-black rounded-xl shadow-lg p-6 hover:shadow-2xl transition"
-              >
-                {product.image && (
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-48 object-cover rounded mb-4"
-                  />
-                )}
-                <h3 className="text-xl font-bold text-gray-800 text-center mb-2">
-                  {product.name}
-                </h3>
-                <p className="text-sm text-gray-600 text-center mb-3">
-                  {product.description}
-                </p>
-                <p className="text-lg font-semibold text-blue-600 text-center mb-4">
-                  Rp{product.price.toLocaleString('id-ID')}
-                </p>
-                <Link
-                  href={`/produk/${product._id}`}
-                  className="text-center block bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md font-semibold transition"
+            {products.map((product) => {
+              const averageRating = product.ratings?.length
+                ? (
+                    product.ratings.reduce((acc, r) => acc + r.score, 0) / product.ratings.length
+                  ).toFixed(1)
+                : null;
+
+              return (
+                <div
+                  key={product._id}
+                  className="bg-white text-black rounded-xl shadow-lg p-6 hover:shadow-2xl transition"
                 >
-                  Lihat Detail
-                </Link>
-              </div>
-            ))}
+                  {product.image && (
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-48 object-cover rounded mb-4"
+                    />
+                  )}
+                  <h3 className="text-xl font-bold text-gray-800 text-center mb-2">
+                    {product.name}
+                  </h3>
+                  <p className="text-sm text-gray-600 text-center mb-3">
+                    {product.description}
+                  </p>
+                  <p className="text-lg font-semibold text-yellow-700 text-center mb-1">
+                    Rp{product.price.toLocaleString('id-ID')}
+                  </p>
+                  <p className="text-sm text-yellow-500 text-center mb-3">
+                    {averageRating ? `⭐ ${averageRating} / 5` : 'Belum ada rating'}
+                  </p>
+                  <Link
+                    href={`/produk/${product._id}`}
+                    className="text-center block bg-yellow-400 hover:bg-yellow-500 text-white py-2 rounded-md font-semibold transition"
+                  >
+                    Lihat Detail
+                  </Link>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -120,11 +132,13 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   let query = {};
   if (search) {
     query = {
-      name: { $regex: search, $options: 'i' }, // pencarian nama produk
+      name: { $regex: search, $options: 'i' },
     };
   }
 
-  const products = await Product.find(query).lean();
+  const products = await Product.find(query)
+    .select('name description price image ratings') // ambil ratings
+    .lean();
 
   return {
     props: {
